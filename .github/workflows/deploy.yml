@@ -32,7 +32,7 @@ jobs:
         run: echo "No dependencies to install."
 
       - name: Build generator manifest
-        run: node scripts/build.js
+        run: node build.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
