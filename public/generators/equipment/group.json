@@ -1,0 +1,5 @@
+{
+  "name": "Equipment",
+  "includeDependencies": ["./dependencies/equipment/vanilla_data.js"],
+  "enabled": true
+}

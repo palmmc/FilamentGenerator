@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Title and modules -->
+    <title>Filament Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Filament Generator" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <!-- Discord embed -->
+    <meta content="Filament Generator" property="og:title" />
+    <meta
+      content="Generate filament content with ease using templates!"
+      property="og:description"
+    />
+    <meta
+      content="https://embed.com/https://palmmc.github.io/FilamentGenerator/"
+      property="og:url"
+    />
+    <meta content="/favicon-96x96.png" property="og:image" />
+    <meta content="#10b981" data-react-helmet="true" name="theme-color" />
+    <!-- Style sheet -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* DANG GIRL, YOU GOT CSS TAG 🫦 */
+      :root {
+        --bg-color: #111827; /* gray-900 */
+        --panel-color: #1f2937; /* gray-800 */
+        --card-color: #374151; /* gray-700 */
+        --border-color: #4b5563; /* gray-600 */
+        --input-color: #4b5563; /* gray-600 */
+        --text-primary: #f9fafb; /* gray-50 */
+        --text-secondary: #d1d5db; /* gray-300 */
+        --accent-color: #10b981; /* emerald-500 */
+        --accent-hover: #059669; /* emerald-600 */
+        --error-color: #f87171; /* red-400 */
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+      }
+      .tab-active {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+      .panel {
+        background-color: var(--panel-color);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+      }
+      .card {
+        background-color: var(--card-color);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+      }
+      .form-input,
+      .form-select {
+        background-color: var(--input-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        transition: border-color 0.2s;
+        width: 100%;
+      }
+      .form-input:focus,
+      .form-select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px var(--accent-color);
+      }
+      .form-input.border-red-500,
+      .form-select.border-red-500 {
+        border-color: var(--error-color);
+      }
+      .form-input.border-red-500:focus,
+      .form-select.border-red-500:focus {
+        border-color: var(--error-color);
+        box-shadow: 0 0 0 2px var(--error-color);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        color: white;
+        border: none;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s ease;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: translateY(0);
+      }
+      .btn-icon {
+        margin-right: 0.5rem;
+        width: 20px;
+        height: 20px;
+      }
+      .btn-dark {
+        background-color: #2d3748;
+        color: #e2e8f0;
+      }
+      .btn-dark:hover:not(:disabled) {
+        background-color: #4a5568;
+      }
+      .btn-green {
+        background-color: #48bb78;
+        color: #ffffff;
+      }
+      .btn-green:hover:not(:disabled) {
+        background-color: #38a169;
+      }
+      .texture-preview {
+        width: 64px;
+        height: 64px;
+        background-color: var(--panel-color);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        border: 2px dashed var(--border-color);
+        border-radius: 0.375rem;
+        image-rendering: pixelated;
+      }
+      .validation-message {
+        color: var(--error-color);
+      }
+      [data-conditional] {
+        transition: all 0.3s ease-in-out;
+      }
+      [data-conditional].hidden {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+        border-width: 0;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      <header class="text-center mb-10">
+        <h1
+          class="text-4xl font-bold text-white flex items-center justify-center gap-3"
+        >
+          <i data-lucide="box" class="text-emerald-400"></i>Filament Generator
+        </h1>
+        <p class="text-lg text-gray-400 mt-2">
+          Generate filament content with ease using templates!
+        </p>
+      </header>
+
+      <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Pack Settings -->
+        <aside class="lg:col-span-1">
+          <div class="panel sticky top-8">
+            <h2
+              class="text-2xl font-semibold mb-6 text-white flex items-center"
+            >
+              <i data-lucide="settings-2" class="mr-3 text-emerald-400"></i>Pack
+              Settings
+            </h2>
+            <div id="pack-settings-container" class="space-y-6">
+              <!-- Pack settings are inserted here -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- Items Panel -->
+        <section class="lg:col-span-2">
+          <div class="panel">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-semibold text-white flex items-center">
+                <i data-lucide="gem" class="mr-3 text-emerald-400"></i>Items
+              </h2>
+              <!-- Generate datapack button -->
+              <button class="btn btn-green" id="generate-pack">
+                <i data-lucide="download" class="btn-icon"></i>
+                <span>Generate Datapack</span>
+              </button>
+            </div>
+
+            <!-- Tabs -->
+            <div id="item-tabs-container" class="space-y-4">
+              <!-- Choose category and tabs are displayed here -->
+            </div>
+
+            <!-- Content -->
+            <div id="tab-content-container" class="mt-6">
+              <!-- Tab content is displayed here -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+      import { generatorGroups, allTemplates } from "./manifest.js";
+      import { packSettings } from "./settings/pack.js";
+
+      /**
+       * Functionss
+       */
+      function formatAsId(value) {
+        return value
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9\s_]/g, "")
+          .replace(/\s+/g, "_");
+      }
+
+      /**
+       * Asset Manager for adding files to datapack
+       */
+      class AssetManager {
+        constructor(zip) {
+          this.zip = zip;
+          // These properties are to manage files that may get accessed more than once, like lang file.
+          this.lang = {};
+          this.tags = {};
+          this.equipments = {};
+        }
+        createFile(path, content) {
+          this.zip.file(path, content);
+        }
+        addLangEntry(key, value) {
+          this.lang[key] = value;
+        }
+        addTag(namespace, tagName, value) {
+          const key = `${namespace}:${tagName}`;
+          if (!this.tags[key]) {
+            this.tags[key] = [];
+          }
+          this.tags[key].push(value);
+        }
+        addEquipmentTexture(key, type, value) {
+          if (!this.equipments[key]) {
+            this.equipments[key] = { layers: {} };
+          }
+          this.equipments[key].layers[type] = [{ texture: value }];
+        }
+        finalize() {
+          // Generate lang
+          if (Object.keys(this.lang).length > 0) {
+            this.createFile(
+              `assets/${this.namespace}/lang/en_us.json`,
+              JSON.stringify(this.lang, null, 2)
+            );
+          }
+          // Generate tags
+          for (const [key, values] of Object.entries(this.tags)) {
+            const [namespace, tagName] = key.split(":");
+            this.createFile(
+              `data/${namespace}/tags/item/${tagName}.json`,
+              JSON.stringify({ values }, null, 2)
+            );
+          }
+          // Generate equipment definitions
+          if (Object.keys(this.equipments).length > 0) {
+            for (let [key, value] of Object.entries(this.equipments)) {
+              this.createFile(
+                `assets/${this.namespace}/equipment/${key}.json`,
+                JSON.stringify(value, null, 2)
+              );
+            }
+          }
+        }
+      }
+
+      /**
+       * Holds references to the card element and queries
+       */
+      class GenerationContext {
+        constructor(card, assets, packSettings, parentContext = null) {
+          this.card = card;
+          this.assets = assets;
+          this.packSettings = packSettings;
+          this.parentContext = parentContext;
+          this.options = JSON.parse(card.dataset.options || "{}");
+        }
+        getField = (id) => {
+          const el = this.card.querySelector(`[data-id="${id}"]`);
+          if (!el) {
+            console.warn(`Field with id "${id}" not found in card.`);
+            return null;
+          }
+          if (el.type === "checkbox") {
+            return el.checked;
+          }
+          if (el.type === "file") {
+            return el.files && el.files.length > 0 ? el.files[0] : null;
+          }
+          if (el.type === "number") {
+            return el.value === "" ? null : parseFloat(el.value);
+          }
+          return el.value;
+        };
+      }
+
+      /**
+       * Main Pack Logic
+       */
+      document.addEventListener("DOMContentLoaded", () => {
+        const UI = {
+          initialize() {
+            const registry = {
+              groups: generatorGroups,
+              templates: allTemplates,
+            };
+            console.log("Loaded generator data successfully!");
+            this.registry = registry;
+            this.renderPackSettings(packSettings);
+            this.renderTabNavigation(registry.groups);
+            lucide.createIcons();
+            return registry;
+          },
+          renderPackSettings(packSettings) {
+            const container = document.getElementById(
+              "pack-settings-container"
+            );
+            container.innerHTML = "";
+            packSettings.forEach((cfg) => {
+              const control = this.createFormControl(
+                cfg.id,
+                cfg.label,
+                cfg.type,
+                cfg.options,
+                cfg
+              );
+              container.appendChild(control);
+            });
+          },
+          renderTabNavigation(groups) {
+            const container = document.getElementById("item-tabs-container");
+            container.innerHTML = `
+                <div>
+                    <label for="group-selector" class="block text-sm font-medium text-gray-300 mb-1">Category</label>
+                    <select id="group-selector" class="form-select"></select>
+                </div>
+                <div class="border-b border-gray-700">
+                    <nav class="-mb-px flex space-x-8" id="tabs-nav-container"></nav>
+                </div>
+            `;
+            const groupSelector = container.querySelector("#group-selector");
+            const contentContainer = document.getElementById(
+              "tab-content-container"
+            );
+            contentContainer.innerHTML = "";
+            groups.forEach((group, index) => {
+              const option = document.createElement("option");
+              option.value = index;
+              option.textContent = group.name;
+              groupSelector.appendChild(option);
+            });
+            groups
+              .flatMap((g) => g.templates)
+              .forEach((template) => {
+                const contentDiv = document.createElement("div");
+                contentDiv.id = `${template.id}-tab`;
+                contentDiv.classList.add("hidden");
+
+                const listDiv = document.createElement("div");
+                listDiv.id = `${template.id}-list`;
+                listDiv.className = "space-y-4";
+                contentDiv.appendChild(listDiv);
+
+                const addBtn = document.createElement("button");
+                addBtn.className = "btn btn-dark mt-4";
+                addBtn.id = `add-${template.id}`;
+                addBtn.innerHTML = `<i data-lucide="plus" class="btn-icon"></i><span>Add ${template.name}</span>`;
+                contentDiv.appendChild(addBtn);
+
+                contentContainer.appendChild(contentDiv);
+              });
+
+            this.renderTabsForGroup(groups[0].templates);
+          },
+          renderTabsForGroup(templates) {
+            const navContainer = document.getElementById("tabs-nav-container");
+            navContainer.innerHTML = "";
+            if (!templates || templates.length === 0) return;
+            templates.forEach((template, index) => {
+              const tabBtn = document.createElement("button");
+              tabBtn.dataset.tab = template.id;
+              tabBtn.textContent = template.name;
+              const baseClasses =
+                "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm";
+              if (index === 0) {
+                tabBtn.className = `${baseClasses} tab-active`;
+              } else {
+                tabBtn.className = `${baseClasses} text-gray-400 hover:text-white border-transparent`;
+              }
+              navContainer.appendChild(tabBtn);
+            });
+          },
+          createItemCard(template, options = {}) {
+            const card = document.createElement("div");
+            card.className = `card relative ${template.cardStyle}`;
+            card.dataset.templateId = template.id;
+            card.dataset.options = JSON.stringify(options);
+
+            if (template.isChild) {
+              card.className = "card !p-4 bg-gray-800/50 relative child-card";
+              card.dataset.pieceType = options.pieceType;
+            }
+            const removeBtn = document.createElement("button");
+            removeBtn.className =
+              "absolute top-3 right-3 text-gray-400 hover:text-white remove-item-btn";
+            removeBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
+            card.appendChild(removeBtn);
+
+            const grid = document.createElement("div");
+            grid.className = "grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4";
+
+            template.fields.forEach((field) => {
+              const control = this.createFormControl(
+                field.id,
+                field.label,
+                field.type,
+                field.options,
+                field
+              );
+              grid.appendChild(control);
+            });
+            card.appendChild(grid);
+            if (template.childItemDef) {
+              const childDef = template.childItemDef;
+              const divider = document.createElement("div");
+              divider.className =
+                "md:col-span-2 border-t border-gray-600 pt-4 mt-2";
+              const title = document.createElement("h4");
+
+              title.className = "text-lg font-semibold text-gray-200 mb-3";
+              title.textContent = childDef.title;
+              divider.appendChild(title);
+              const container = document.createElement("div");
+              container.className = "space-y-4 child-items-container";
+
+              divider.appendChild(container);
+              const btnContainer = document.createElement("div");
+              btnContainer.className = "flex flex-wrap gap-2 mt-4";
+
+              childDef.buttons.forEach((btnDef) => {
+                const btn = document.createElement("button");
+                btn.className = "btn btn-dark btn-sm flex-1 add-child-item-btn";
+                btn.dataset.templateId = btnDef.template.id;
+                btn.dataset.options = JSON.stringify(btnDef.options);
+                btn.innerHTML = `<i data-lucide="plus" class="btn-icon"></i>${btnDef.label}`;
+                btnContainer.appendChild(btn);
+              });
+              divider.appendChild(btnContainer);
+              grid.appendChild(divider);
+            }
+
+            return card;
+          },
+
+          createFormControl(id, label, type, opts = {}, fieldInstance = null) {
+            const wrapper = document.createElement("div");
+            if (opts.width === "half") wrapper.className = "md:col-span-1";
+            if (opts.width === "full") wrapper.className = "md:col-span-2";
+            if (opts.condition) {
+              wrapper.dataset.conditional = id;
+              wrapper.classList.add("hidden");
+            }
+
+            let labelEl = label
+              ? `<label for="${id}" class="block text-sm font-medium text-gray-300 mb-1">${label}</label>`
+              : "";
+            let helpEl = opts.help
+              ? `<p class="text-xs text-gray-400 mt-2">${opts.help}</p>`
+              : "";
+            // Show error is response validation or required field is not met
+            let errorEl = `<p class="text-xs mt-1 hidden validation-message"></p>`;
+
+            let inputHtml = "";
+            switch (type) {
+              case "title":
+                wrapper.innerHTML = `<h5 class="md:col-span-2 text-md font-bold text-emerald-400 capitalize" data-id="${id}"></h5>`;
+                return wrapper;
+              case "text":
+              case "number":
+              case "file":
+                inputHtml = `<input type="${type}" id="${id}" data-id="${id}" class="form-input"
+                    ${
+                      opts.placeholder
+                        ? `placeholder="${opts.placeholder}"`
+                        : ""
+                    }
+                    ${opts.defaultValue ? `value="${opts.defaultValue}"` : ""}
+                    ${opts.step ? `step="${opts.step}"` : ""}
+                    ${opts.accept ? `accept="${opts.accept}"` : ""}
+                    ${opts.readonly ? "readonly" : ""}>`;
+                break;
+              case "select":
+                inputHtml = `<select id="${id}" data-id="${id}" class="form-select">
+                  ${(fieldInstance?.choices || [])
+                    .map(
+                      (opt) =>
+                        `<option value="${opt.value}">${opt.text}</option>`
+                    )
+                    .join("")}
+                </select>`;
+                break;
+              case "toggle":
+                wrapper.innerHTML = `<label for="${id}" class="flex items-center cursor-pointer group">
+                  <div class="relative">
+                    <input id="${id}" data-id="${id}" type="checkbox" class="sr-only peer" ${
+                  opts.defaultValue ? "checked" : ""
+                }>
+                    <div class="w-12 h-7 bg-gray-600 rounded-full shadow-inner transition-colors peer-checked:bg-emerald-500"></div>
+                    <div class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                  </div>
+                  <span class="ml-3 ${
+                    opts.isSmall ? "text-sm" : "font-medium"
+                  } text-gray-400 group-hover:text-white transition-colors">${label}</span>
+                </label>${errorEl}`;
+                return wrapper;
+              case "group":
+                wrapper.id = id;
+                wrapper.className = "pl-6 space-y-4";
+                wrapper.dataset.conditional = id;
+                wrapper.classList.add("hidden");
+                opts.children.forEach((childCfg) => {
+                  const control = this.createFormControl(
+                    childCfg.id,
+                    childCfg.label,
+                    childCfg.type,
+                    childCfg.options,
+                    childCfg
+                  );
+                  wrapper.appendChild(control);
+                });
+                return wrapper;
+              case "divider":
+                wrapper.className = "border-t border-gray-600";
+                return wrapper;
+              default:
+                wrapper.textContent = `Unknown control type: ${type}`;
+                return wrapper;
+            }
+
+            if (opts.withPreview) {
+              wrapper.innerHTML = `${labelEl}<div class="flex items-center gap-4 mt-1"><div class="texture-preview flex-shrink-0"></div><div class="w-full">${inputHtml}</div></div>${helpEl}${errorEl}`;
+            } else {
+              wrapper.innerHTML = `${labelEl}${inputHtml}${helpEl}${errorEl}`;
+            }
+
+            if (opts.onChange) {
+              const inputEl = wrapper.querySelector(`[data-id="${id}"]`);
+              if (inputEl) {
+                const eventType =
+                  inputEl.tagName === "SELECT" || inputEl.type === "checkbox"
+                    ? "change"
+                    : "input";
+                inputEl.addEventListener(eventType, opts.onChange);
+              }
+            }
+            return wrapper;
+          },
+        };
+
+        const registry = UI.initialize();
+        let activeTab = registry.groups[0].templates[0]?.id;
+        const groupSelector = document.getElementById("group-selector");
+        const tabNavContainer = document.getElementById("tabs-nav-container");
+        const tabContentContainer = document.getElementById(
+          "tab-content-container"
+        );
+        function updateContentVisibility() {
+          tabContentContainer.querySelectorAll('[id$="-tab"]').forEach((c) => {
+            c.classList.toggle("hidden", c.id !== `${activeTab}-tab`);
+          });
+        }
+
+        groupSelector.addEventListener("change", (e) => {
+          const groupIndex = parseInt(e.target.value, 10);
+          const selectedGroup = registry.groups[groupIndex];
+
+          UI.renderTabsForGroup(selectedGroup.templates);
+          activeTab = selectedGroup.templates[0]?.id;
+          updateContentVisibility();
+        });
+
+        tabNavContainer.addEventListener("click", (e) => {
+          const tabBtn = e.target.closest("[data-tab]");
+          if (!tabBtn) return;
+
+          activeTab = tabBtn.dataset.tab;
+          tabNavContainer.querySelectorAll("[data-tab]").forEach((t) => {
+            t.classList.remove("tab-active");
+            t.classList.add(
+              "text-gray-400",
+              "hover:text-white",
+              "border-transparent"
+            );
+          });
+          tabBtn.classList.add("tab-active");
+          tabBtn.classList.remove(
+            "text-gray-400",
+            "hover:text-white",
+            "border-transparent"
+          );
+          updateContentVisibility();
+        });
+
+        tabContentContainer.addEventListener("click", (e) => {
+          const addButton = e.target.closest('[id^="add-"]');
+          if (!addButton) return;
+          const template = registry.templates.get(activeTab);
+          if (!template) return;
+
+          const card = UI.createItemCard(template);
+          document.getElementById(`${activeTab}-list`).appendChild(card);
+          lucide.createIcons();
+          if (template.onCardAdded) {
+            template.onCardAdded(card);
+          }
+        });
+
+        document.body.addEventListener("click", (e) => {
+          if (e.target.closest(".remove-item-btn")) {
+            const cardToRemove = e.target.closest(".card");
+            if (cardToRemove.classList.contains("child-card")) {
+              // Try to target parent card as closest non-child card
+              const parentCard = cardToRemove.closest(".card:not(.child-card)");
+              if (parentCard) {
+                const options = JSON.parse(
+                  cardToRemove.dataset.options || "{}"
+                );
+                const addButton = parentCard.querySelector(
+                  `.add-child-item-btn[data-options*='"pieceType":"${options.pieceType}"']`
+                );
+                if (addButton) addButton.disabled = false;
+              }
+            }
+            cardToRemove.remove();
+          }
+
+          if (e.target.closest(".add-child-item-btn")) {
+            const btn = e.target.closest(".add-child-item-btn");
+            const templateId = btn.dataset.templateId;
+            const options = JSON.parse(btn.dataset.options || "{}");
+            const parentCard = btn.closest(".card");
+            const parentTemplate = registry.templates.get(
+              parentCard.dataset.templateId
+            );
+            const childButtonDef = parentTemplate.childItemDef.buttons.find(
+              (b) =>
+                b.template.id === templateId &&
+                b.options.pieceType === options.pieceType
+            );
+
+            if (childButtonDef) {
+              const childCard = UI.createItemCard(
+                childButtonDef.template,
+                options
+              );
+              if (parentTemplate.applyNameToPiece) {
+                parentTemplate.applyNameToPiece(parentCard, childCard);
+              }
+              parentCard
+                .querySelector(".child-items-container")
+                .appendChild(childCard);
+              childButtonDef.template.onCardAdded(childCard);
+              parentTemplate.onCardAdded(parentCard);
+              btn.disabled = true;
+              lucide.createIcons();
+            }
+          }
+        });
+
+        document.body.addEventListener("input", (e) => {
+          const target = e.target;
+
+          if (target.dataset.id === "itemGroupName") {
+            const itemGroupIdInput = document.querySelector(
+              '[data-id="itemGroupId"]'
+            );
+            if (itemGroupIdInput)
+              itemGroupIdInput.value = formatAsId(target.value);
+          }
+
+          const card = target.closest(".card");
+          if (!card) return;
+
+          // Try to generate item ids from item names.
+          if (target.dataset.id === "itemName") {
+            const itemIdInput = card.querySelector('[data-id="itemId"]');
+            itemIdInput.value = formatAsId(target.value);
+          }
+        });
+
+        document.body.addEventListener("change", (e) => {
+          const target = e.target;
+          if (target.type === "checkbox" && target.id === "useItemGroup") {
+            const groupOptions = document.getElementById("itemGroupOptions");
+            if (groupOptions) {
+              groupOptions.classList.toggle("hidden", !target.checked);
+            }
+          }
+          if (
+            target.type === "file" &&
+            target.closest(".flex")?.querySelector(".texture-preview")
+          ) {
+            const file = target.files[0];
+            const preview = target
+              .closest(".flex")
+              .querySelector(".texture-preview");
+            if (file && preview) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                preview.style.backgroundImage = `url('${event.target.result}')`;
+              };
+              reader.readAsDataURL(file);
+            } else if (preview) {
+              preview.style.backgroundImage = "none";
+            }
+          }
+        });
+
+        function validateForms() {
+          document
+            .querySelectorAll(".validation-message")
+            .forEach((el) => el.classList.add("hidden"));
+          document
+            .querySelectorAll(".form-input, .form-select")
+            .forEach((el) => el.classList.remove("border-red-500"));
+
+          let allValid = true;
+
+          const fieldsToValidate = [];
+          const packSettingsContainer = document.getElementById(
+            "pack-settings-container"
+          );
+          const gatherSettingsFields = (configs, container) => {
+            configs.forEach((config) => {
+              if (config.type === "group") {
+                const conditionField = document.getElementById(
+                  config.options.condition.field
+                );
+                if (
+                  conditionField &&
+                  conditionField.checked === config.options.condition.value
+                ) {
+                  gatherSettingsFields(config.options.children, container);
+                }
+              } else if (config.id) {
+                const el = container.querySelector(`[data-id="${config.id}"]`);
+                if (el) {
+                  fieldsToValidate.push({ el, fieldDef: config.options });
+                }
+              }
+            });
+          };
+          gatherSettingsFields(packSettings, packSettingsContainer);
+
+          document
+            .querySelectorAll("#tab-content-container .card")
+            .forEach((card) => {
+              const template = registry.templates.get(card.dataset.templateId);
+              if (!template) return;
+              template.fields.forEach((fieldDef) => {
+                const el = card.querySelector(`[data-id="${fieldDef.id}"]`);
+                if (el) {
+                  fieldsToValidate.push({ el, fieldDef });
+                }
+              });
+            });
+
+          fieldsToValidate.forEach(({ el, fieldDef }) => {
+            const wrapper = el.closest(
+              '.md\\:col-span-1, .md\\:col-span-2, div:has(> label[for="' +
+                el.id +
+                '"])'
+            );
+            const errorEl = wrapper
+              ? wrapper.querySelector(".validation-message")
+              : null;
+            let errorMessage = "";
+
+            if (fieldDef.required) {
+              let isEmpty = false;
+              if (el.type === "checkbox") isEmpty = !el.checked;
+              else if (el.type === "file") isEmpty = el.files.length === 0;
+              else isEmpty = el.value.trim() === "";
+              if (isEmpty) {
+                errorMessage =
+                  fieldDef.requiredMessage || "This field is required.";
+              }
+            }
+
+            if (
+              !errorMessage &&
+              el.type === "number" &&
+              fieldDef.range &&
+              el.value.trim() !== ""
+            ) {
+              const value = parseFloat(el.value);
+              const { min, max } = fieldDef.range;
+              if (min !== undefined && value < min) {
+                errorMessage = `Value must be at least ${min}.`;
+              } else if (max !== undefined && value > max) {
+                errorMessage = `Value must not exceed ${max}.`;
+              }
+            }
+            if (errorMessage) {
+              allValid = false;
+              if (errorEl) {
+                errorEl.textContent = errorMessage;
+                errorEl.classList.remove("hidden");
+              }
+              el.classList.add("border-red-500");
+            }
+          });
+
+          return allValid;
+        }
+
+        document
+          .getElementById("generate-pack")
+          .addEventListener("click", async () => {
+            if (!validateForms()) {
+              console.error(
+                "Validation failed. Please fix the errors before generating."
+              );
+              return;
+            }
+
+            const packSettings = gatherPackSettings();
+            const zip = new JSZip();
+            const assets = new AssetManager(zip);
+            assets.namespace = packSettings.packName;
+
+            // Global files
+            zip.file(
+              "pack.mcmeta",
+              JSON.stringify(
+                {
+                  pack: {
+                    pack_format: 15,
+                    description:
+                      packSettings.packDesc ??
+                      "Generated with Filament Generator",
+                  },
+                },
+                null,
+                2
+              )
+            );
+            if (packSettings.packIcon)
+              zip.file("pack.png", packSettings.packIcon);
+
+            if (packSettings.createItemGroup) {
+              const itemGroupId = packSettings.itemGroupId;
+              const itemGroupName = packSettings.itemGroupName;
+              assets.addLangEntry(
+                `${assets.namespace}.itemGroup.${itemGroupId}`,
+                itemGroupName
+              );
+              const itemGroupDataContents = [
+                {
+                  id: `${assets.namespace}:${itemGroupId}`,
+                  item: packSettings.itemGroupItem ?? "minecraft:iron_pickaxe",
+                },
+              ];
+              zip.file(
+                `data/${assets.namespace}/filament/item-groups.json`,
+                JSON.stringify(itemGroupDataContents, null, 2)
+              );
+            }
+
+            document
+              .querySelectorAll("#tab-content-container .card")
+              .forEach((card) => {
+                if (card.classList.contains("child-card")) return;
+
+                const template = registry.templates.get(
+                  card.dataset.templateId
+                );
+                if (!template) return;
+
+                const cardContext = new GenerationContext(
+                  card,
+                  assets,
+                  packSettings
+                );
+
+                // Check child templates
+                if (template.childItemDef) {
+                  card.querySelectorAll(".child-card").forEach((childCard) => {
+                    const childOptions = JSON.parse(
+                      childCard.dataset.options || "{}"
+                    );
+                    const childButtonDef = template.childItemDef.buttons.find(
+                      (b) => b.options.pieceType === childOptions.pieceType
+                    );
+
+                    if (childButtonDef && childButtonDef.template) {
+                      const childContext = new GenerationContext(
+                        childCard,
+                        assets,
+                        packSettings,
+                        cardContext
+                      );
+                      childButtonDef.template.onGenerate(childContext);
+                    }
+                  });
+                }
+
+                if (template.onGenerate) {
+                  template.onGenerate(cardContext);
+                }
+              });
+
+            assets.finalize();
+
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = `${packSettings.packName}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          });
+
+        function gatherPackSettings() {
+          const settings = {};
+          document
+            .querySelectorAll("#pack-settings-container [data-id]")
+            .forEach((el) => {
+              const id = el.dataset.id;
+              if (el.type === "checkbox") settings[id] = el.checked;
+              else if (el.type === "file") settings[id] = el.files[0];
+              else settings[id] = el.value.trim();
+            });
+          settings.packName = (settings.packName || "custompack")
+            .toLowerCase()
+            .replace(/\s+/g, "_")
+            .replace(/[^\w-]/g, "");
+          return settings;
+        }
+
+        updateContentVisibility();
+      });
+    </script>
+  </body>
+</html>
